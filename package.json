@@ -1,0 +1,50 @@
+{
+  "name": "other-task-utilities",
+  "version": "1.0.0",
+  "description": "Web scraping utilities for Twitter/X, Weibo, and Chinese macro-economic data",
+  "author": "yanan.wu",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "scripts": {
+    "browser": "node launch-browser.js",
+    "scrape:twitter": "node other-task/twitter-task/scrape-twitter-list.js",
+    "scrape:twitter:today": "node other-task/twitter-task/scrape-twitter-list.js --since today",
+    "scrape:twitter:fresh": "node other-task/twitter-task/scrape-twitter-list.js --no-cache",
+    "scrape:weibo": "node other-task/weibo-task/scrape-weibo-list.js",
+    "scrape:weibo:today": "node other-task/weibo-task/scrape-weibo-list.js --since today",
+    "scrape:weibo:fresh": "node other-task/weibo-task/scrape-weibo-list.js --no-cache",
+    "scrape:weibo-user": "node other-task/weibo-task/scrape-weibo-user.js",
+    "scrape:eastmoney": "node other-task/eastmoney-task/scrape-eastmoney-futures.js ma pp eg sc",
+    "scrape:eastmoney:fresh": "node other-task/eastmoney-task/scrape-eastmoney-futures.js ma pp eg sc --no-cache",
+    "fetch:macro-news": "node other-task/macro-news-task/fetch-macro-news.js",
+    "fetch:macro-news:macro": "node other-task/macro-news-task/fetch-macro-news.js --category macro",
+    "fetch:macro-news:industry": "node other-task/macro-news-task/fetch-macro-news.js --category industry",
+    "fetch:macro-news:fresh": "node other-task/macro-news-task/fetch-macro-news.js --no-cache",
+    "fetch:macro-news:no-llm": "node other-task/macro-news-task/fetch-macro-news.js --no-llm",
+    "workflow:macro-news": "node other-task/macro-news-task/run-workflow.js",
+    "workflow:macro-news:resume": "node other-task/macro-news-task/run-workflow.js --resume",
+    "workflow:macro-news:fresh": "node other-task/macro-news-task/run-workflow.js --no-cache",
+    "workflow:macro-news:dry-run": "node other-task/macro-news-task/run-workflow.js --dry-run",
+    "validate:phones": "node src/utils/validate-phones.js",
+    "generate:phones": "node src/utils/generate-phone-list.js"
+  },
+  "keywords": [
+    "scraping",
+    "weibo",
+    "twitter",
+    "x",
+    "macro-economics",
+    "china-data",
+    "eastmoney",
+    "futures",
+    "playwright",
+    "patchright",
+    "browser-automation"
+  ],
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "patchright": "^1.56.1"
+  }
+}
