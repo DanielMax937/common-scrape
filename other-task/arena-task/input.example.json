@@ -1,0 +1,12 @@
+[
+  {
+    "prompt": "A cinematic close-up of a red paper plane flying through rainy neon city streets at night.",
+    "attachments": [
+      "./assets/reference-1.jpg"
+    ]
+  },
+  {
+    "prompt": "A little girl dribbles a basketball on an outdoor court at sunset, handheld camera, natural motion.",
+    "attachment": "./assets/reference-2.png"
+  }
+]

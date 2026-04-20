@@ -28,7 +28,8 @@
     "workflow:macro-news:fresh": "node other-task/macro-news-task/run-workflow.js --no-cache",
     "workflow:macro-news:dry-run": "node other-task/macro-news-task/run-workflow.js --dry-run",
     "validate:phones": "node src/utils/validate-phones.js",
-    "generate:phones": "node src/utils/generate-phone-list.js"
+    "generate:phones": "node src/utils/generate-phone-list.js",
+    "arena:video:batch": "node other-task/arena-task/run-arena-video-batch.js"
   },
   "keywords": [
     "scraping",

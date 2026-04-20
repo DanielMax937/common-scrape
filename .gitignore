@@ -89,3 +89,6 @@ worktrees/
 logs/
 .playwright-mcp/
 task-temp/
+videooutput/
+downloads/
+output/
