@@ -29,7 +29,9 @@
     "workflow:macro-news:dry-run": "node other-task/macro-news-task/run-workflow.js --dry-run",
     "validate:phones": "node src/utils/validate-phones.js",
     "generate:phones": "node src/utils/generate-phone-list.js",
-    "arena:video:batch": "node other-task/arena-task/run-arena-video-batch.js"
+    "arena:video:batch": "node other-task/arena-task/run-arena-video-batch.js",
+    "doubao:video": "node other-task/doubao-video-task/run-doubao-video-batch.js",
+    "alice:chat": "node other-task/alice-task/run-alice-chat-task.js"
   },
   "keywords": [
     "scraping",

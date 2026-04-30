@@ -46,6 +46,8 @@ What to do after launching:
   2. Navigate to platforms you want to scrape:
      - Twitter/X: https://x.com (log in)
      - Weibo: https://weibo.com (log in)
+     - Doubao: https://www.doubao.com/chat/ (log in)
+     - Alice: https://alice.wind.com.cn/chat (log in)
   3. Complete login for all platforms
   4. Close the browser when done
   5. Your sessions will be saved in browser-profiles/browser-{id}/
@@ -124,6 +126,8 @@ Profile storage: browser-profiles/browser-{id}/
     console.log('   2. Navigate to platforms you want to use:');
     console.log('      • Twitter/X: https://x.com');
     console.log('      • Weibo: https://weibo.com');
+    console.log('      • Doubao: https://www.doubao.com/chat/');
+    console.log('      • Alice: https://alice.wind.com.cn/chat');
     console.log('   3. Log in to each platform');
     console.log('   4. Close the browser when done');
     console.log('   5. Your login sessions will be saved');
@@ -252,6 +256,20 @@ Profile storage: browser-profiles/browser-{id}/
         <a href="https://weibo.com" target="_blank">https://weibo.com</a>
         <div style="color: #666; font-size: 13px; margin-top: 5px;">
           Required for: <code>npm run scrape:weibo</code>, <code>npm run scrape:weibo-user</code>
+        </div>
+      </li>
+      <li>
+        <strong>Doubao (豆包)</strong><br>
+        <a href="https://www.doubao.com/chat/" target="_blank">https://www.doubao.com/chat/</a>
+        <div style="color: #666; font-size: 13px; margin-top: 5px;">
+          Required for: <code>npm run doubao:video</code>
+        </div>
+      </li>
+      <li>
+        <strong>Wind Alice</strong><br>
+        <a href="https://alice.wind.com.cn/chat" target="_blank">https://alice.wind.com.cn/chat</a>
+        <div style="color: #666; font-size: 13px; margin-top: 5px;">
+          Required for: <code>npm run alice:chat</code>
         </div>
       </li>
     </ul>
