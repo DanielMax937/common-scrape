@@ -5,6 +5,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const path = require('path');
+const { loadProxyConfig } = require('../../proxy-utils');
 require('dotenv').config();
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
@@ -531,25 +532,39 @@ function createTaskQueue(tasks) {
   };
 }
 
-async function createWorker(profileDir, workerId, queue, config, results) {
+async function createWorker(profileDir, workerId, queue, config, results, profileIndex) {
   const workerLabel = `[doubao-worker-${workerId}]`;
+  const proxy = loadProxyConfig('doubao', profileIndex);
+
   const launchOptions = {
     headless: config.headless,
     acceptDownloads: true,
     channel: config.browserChannel,
   };
+  if (proxy) {
+    launchOptions.proxy = proxy;
+  }
 
   fs.mkdirSync(profileDir, { recursive: true });
 
   let context;
   try {
-    console.log(`${workerLabel} launch profile: ${profileDir}`);
+    if (proxy) {
+      console.log(`${workerLabel} launch profile: ${profileDir} (proxy: ${proxy.server})`);
+    } else {
+      console.log(`${workerLabel} launch profile: ${profileDir} (no proxy)`);
+    }
     context = await chromium.launchPersistentContext(profileDir, launchOptions);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
 
     const page = context.pages()[0] || (await context.newPage());
     page.setDefaultTimeout(config.pageTimeoutMs);
     page.setDefaultNavigationTimeout(config.pageTimeoutMs);
+
+    // Stagger task submission to avoid overwhelming server
+    const staggerDelayMs = (profileIndex + 1) * 10000;
+    console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s`);
+    await page.waitForTimeout(staggerDelayMs);
 
     while (true) {
       const task = queue.next();
@@ -598,6 +613,7 @@ function printConfig(config, taskCount) {
   console.log(`Page timeout:    ${config.pageTimeoutMs}ms`);
   console.log(`Max wait:        ${config.maxWaitMs}ms`);
   console.log(`Retries:         ${config.maxRetries}`);
+  console.log(`Proxy tasks:     ${process.env.PROXY_TASKS || '(not set)'}`);
   console.log('');
 }
 
@@ -623,7 +639,7 @@ async function main() {
 
   const queue = createTaskQueue(tasks);
   const results = [];
-  await Promise.all(config.profileDirs.map((profileDir, i) => createWorker(profileDir, i + 1, queue, config, results)));
+  await Promise.all(config.profileDirs.map((profileDir, i) => createWorker(profileDir, i + 1, queue, config, results, i)));
 
   const successCount = results.filter((result) => result.ok).length;
   const failed = results.filter((result) => !result.ok).sort((a, b) => a.index - b.index);

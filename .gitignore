@@ -92,3 +92,6 @@ task-temp/
 videooutput/
 downloads/
 output/
+
+# Proxy config (contains credentials)
+proxy-config.json

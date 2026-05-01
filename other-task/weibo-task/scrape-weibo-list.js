@@ -32,6 +32,7 @@
 const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
+const { loadProxyConfig } = require('../../proxy-utils');
 const https = require('https');
 const http = require('http');
 
@@ -670,22 +671,11 @@ async function main() {
       viewport: config.headless ? { width: 1280, height: 900 } : null,
     };
 
-    // Load proxy if available
-    const proxyConfigPath = path.join(PROJECT_ROOT, 'proxy-config.json');
-    if (fs.existsSync(proxyConfigPath)) {
-      try {
-        const proxies = JSON.parse(fs.readFileSync(proxyConfigPath, 'utf-8'));
-        const proxyIndex = config.profileId - 1;
-        if (Array.isArray(proxies) && proxies[proxyIndex]) {
-          const proxy = proxies[proxyIndex];
-          launchOptions.proxy = {
-            server: `http://${proxy.server}`, username: proxy.username, password: proxy.password,
-          };
-          console.log(`   🔒 Proxy: ${proxy.server}`);
-        }
-      } catch (err) {
-        console.warn(`   ⚠️  Failed to load proxy config: ${err.message}`);
-      }
+    // Load proxy config if PROXY_TASKS includes "weibo-list"
+    const proxy = loadProxyConfig('weibo-list', config.profileId - 1);
+    if (proxy) {
+      launchOptions.proxy = proxy;
+      console.log(`   🔒 Proxy: ${proxy.server}`);
     }
 
     context = await chromium.launchPersistentContext(userDataDir, launchOptions);

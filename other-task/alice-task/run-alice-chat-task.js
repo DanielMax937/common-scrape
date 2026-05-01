@@ -3,6 +3,7 @@
 const { chromium } = require('patchright');
 const fs = require('fs');
 const path = require('path');
+const { loadProxyConfig } = require('../../proxy-utils');
 require('dotenv').config();
 
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
@@ -120,7 +121,9 @@ function getProfileConfigs() {
 
 function getEnvConfig() {
   const profiles = getProfileConfigs();
-  const outputDir = path.resolve(PROJECT_ROOT, process.env.ALICE_OUTPUT_DIR || path.join('output', 'alice'));
+  const baseOutputDir = path.resolve(PROJECT_ROOT, process.env.ALICE_OUTPUT_DIR || path.join('output', 'alice'));
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const outputDir = path.join(baseOutputDir, timestamp);
 
   return {
     inputJsonPath: path.resolve(
@@ -834,22 +837,31 @@ function printConfig(config, taskCount) {
   console.log(`Browser channel: ${config.browserChannel}`);
   console.log(`Page timeout:    ${config.pageTimeoutMs}ms`);
   console.log(`Task timeout:    ${config.taskTimeoutMs}ms`);
+  console.log(`Proxy tasks:     ${process.env.PROXY_TASKS || '(not set)'}`);
   console.log('');
 }
 
-async function createWorker(group, workerId, config, results) {
+async function createWorker(group, workerId, config, results, profileIndex) {
   const { profile, tasks } = group;
   const workerLabel = `[alice-worker-${workerId}]`;
   const profileDir = profile.dir;
   fs.mkdirSync(profileDir, { recursive: true });
 
+  const proxy = loadProxyConfig('alice', profileIndex);
+
   let context;
   try {
-    console.log(`${workerLabel} launch profile: ${profileDir}`);
-    context = await chromium.launchPersistentContext(profileDir, {
+    const launchOptions = {
       headless: config.headless,
       channel: config.browserChannel,
-    });
+    };
+    if (proxy) {
+      launchOptions.proxy = proxy;
+      console.log(`${workerLabel} launch profile: ${profileDir} (proxy: ${proxy.server})`);
+    } else {
+      console.log(`${workerLabel} launch profile: ${profileDir} (no proxy)`);
+    }
+    context = await chromium.launchPersistentContext(profileDir, launchOptions);
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
       origin: new URL(config.targetUrl).origin,
     }).catch(() => {});
@@ -857,6 +869,11 @@ async function createWorker(group, workerId, config, results) {
     const page = context.pages()[0] || (await context.newPage());
     page.setDefaultTimeout(config.pageTimeoutMs);
     page.setDefaultNavigationTimeout(config.pageTimeoutMs);
+
+    // Stagger task submission to avoid overwhelming Alice server
+    const staggerDelayMs = (profileIndex + 1) * 10000;
+    console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s`);
+    await page.waitForTimeout(staggerDelayMs);
 
     for (const task of tasks) {
       console.log(`${workerLabel} start task #${task.index}, skill #${task.skillNumber}`);
@@ -918,7 +935,7 @@ async function main() {
   printConfig(config, taskCount);
 
   const results = [];
-  await Promise.all(taskPlan.map((group, i) => createWorker(group, i + 1, config, results)));
+  await Promise.all(taskPlan.map((group, i) => createWorker(group, i + 1, config, results, i)));
 
   const successCount = results.filter((result) => result.ok).length;
   const failed = results.filter((result) => !result.ok).sort((a, b) => a.index - b.index);

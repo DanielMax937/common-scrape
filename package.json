@@ -31,7 +31,9 @@
     "generate:phones": "node src/utils/generate-phone-list.js",
     "arena:video:batch": "node other-task/arena-task/run-arena-video-batch.js",
     "doubao:video": "node other-task/doubao-video-task/run-doubao-video-batch.js",
-    "alice:chat": "node other-task/alice-task/run-alice-chat-task.js"
+    "alice:chat": "node other-task/alice-task/run-alice-chat-task.js",
+    "record": "node other-task/recorder-task/record-clicks.js",
+    "replay": "node other-task/recorder-task/replay-task.js"
   },
   "keywords": [
     "scraping",

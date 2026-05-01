@@ -18,6 +18,7 @@
 const { chromium } = require('patchright');
 const path = require('path');
 const fs = require('fs');
+const { loadProxyConfig } = require('./proxy-utils');
 
 const PROJECT_ROOT = __dirname;
 
@@ -97,23 +98,10 @@ Profile storage: browser-profiles/browser-{id}/
     headless: false,
   };
 
-  const proxyConfigPath = path.join(PROJECT_ROOT, 'proxy-config.json');
-  if (fs.existsSync(proxyConfigPath)) {
-    try {
-      const proxies = JSON.parse(fs.readFileSync(proxyConfigPath, 'utf-8'));
-      const proxyIndex = profileId - 1;
-      if (Array.isArray(proxies) && proxies[proxyIndex]) {
-        const proxy = proxies[proxyIndex];
-        launchOptions.proxy = {
-          server: `http://${proxy.server}`,
-          username: proxy.username,
-          password: proxy.password,
-        };
-        console.log(`🔒 Using proxy: ${proxy.server}`);
-      }
-    } catch (err) {
-      console.warn(`⚠️  Failed to load proxy config: ${err.message}`);
-    }
+  const proxy = loadProxyConfig('browser', profileId - 1);
+  if (proxy) {
+    launchOptions.proxy = proxy;
+    console.log(`🔒 Using proxy: ${proxy.server}`);
   }
 
   console.log('');
@@ -138,6 +126,13 @@ Profile storage: browser-profiles/browser-{id}/
   }
 
   try {
+    // Stagger launch to avoid simultaneous browser starts
+    const staggerDelayMs = profileId * 10000;
+    if (staggerDelayMs > 0) {
+      console.log(`⏳ Stagger delay: ${staggerDelayMs / 1000}s before launching...`);
+      await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
+    }
+
     const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
     
     // Grant clipboard permissions
