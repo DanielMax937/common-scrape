@@ -24,8 +24,13 @@
       "prompt": "请分析A股股票：{{aShareStockName}}。"
     },
     {
+      "name": "stock-review",
+      "skillNumber": 3,
+      "prompt": "执行今日复盘"
+    },
+    {
       "name": "futures-analysis",
-      "skillNumber": 1,
+      "skillNumber": 4,
       "prompt": "请分析期货品种：{{futuresProductName}}。"
     }
   ]
