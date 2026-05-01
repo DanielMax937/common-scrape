@@ -1,10 +1,32 @@
-[
-  {
-    "skillNumber": 1,
-    "prompt": "请用三段话总结一下今天适合关注的宏观经济变量，并给出一个简短观察框架。"
+{
+  "version": 1,
+  "assignment": {
+    "profileSource": "env",
+    "strategy": "perBrowserSequential",
+    "tasksPerBrowser": 2
   },
-  {
-    "skillNumber": 2,
-    "prompt": "请列出一份面向普通读者的市场日报结构，要求包含标题、要点和风险提示。"
-  }
-]
+  "variables": {
+    "aShareStockName": {
+      "type": "randomChoice",
+      "source": "builtin:a_share_stock_names",
+      "uniquePerRun": true
+    },
+    "futuresProductName": {
+      "type": "randomChoice",
+      "source": "builtin:futures_product_names",
+      "uniquePerRun": true
+    }
+  },
+  "taskTemplates": [
+    {
+      "name": "stock-analysis",
+      "skillNumber": 2,
+      "prompt": "请分析A股股票：{{aShareStockName}}。"
+    },
+    {
+      "name": "futures-analysis",
+      "skillNumber": 1,
+      "prompt": "请分析期货品种：{{futuresProductName}}。"
+    }
+  ]
+}
