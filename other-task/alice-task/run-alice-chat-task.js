@@ -822,6 +822,16 @@ async function runTask(page, task, config, profile) {
   return resultPath;
 }
 
+async function closePageSafely(page) {
+  try {
+    if (page && !page.isClosed()) {
+      await page.close();
+    }
+  } catch (_) {
+    // ignore close errors
+  }
+}
+
 function printConfig(config, taskCount) {
   console.log('');
   console.log('Alice Chat Task Runner');
@@ -866,17 +876,36 @@ async function createWorker(group, workerId, config, results, profileIndex) {
       origin: new URL(config.targetUrl).origin,
     }).catch(() => {});
 
-    const page = context.pages()[0] || (await context.newPage());
-    page.setDefaultTimeout(config.pageTimeoutMs);
-    page.setDefaultNavigationTimeout(config.pageTimeoutMs);
-
     // Stagger task submission to avoid overwhelming Alice server
     const staggerDelayMs = (profileIndex + 1) * 10000;
     console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s`);
-    await page.waitForTimeout(staggerDelayMs);
+    await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
 
     for (const task of tasks) {
-      console.log(`${workerLabel} start task #${task.index}, skill #${task.skillNumber}`);
+      // Each task gets a fresh tab: close previous page, open a new one
+      let page;
+      try {
+        page = await context.newPage();
+        page.setDefaultTimeout(config.pageTimeoutMs);
+        page.setDefaultNavigationTimeout(config.pageTimeoutMs);
+      } catch (err) {
+        console.error(`${workerLabel} task #${task.index} failed to open new tab: ${err.message}`);
+        appendJsonl(config.resultsPath, {
+          taskIndex: task.index,
+          taskName: task.name,
+          skillNumber: task.skillNumber,
+          prompt: task.prompt,
+          ok: false,
+          error: `Failed to open new tab: ${err.message}`,
+          profileId: profile.id,
+          profileDir: profile.dir,
+          capturedAt: new Date().toISOString(),
+        });
+        results.push({ index: task.index, ok: false, error: err.message, profileId: profile.id });
+        continue;
+      }
+
+      console.log(`${workerLabel} start task #${task.index}, skill #${task.skillNumber} (new tab)`);
       try {
         const resultPath = await runTask(page, task, config, profile);
         console.log(`${workerLabel} task #${task.index} saved -> ${resultPath}`);
@@ -895,6 +924,8 @@ async function createWorker(group, workerId, config, results, profileIndex) {
           capturedAt: new Date().toISOString(),
         });
         results.push({ index: task.index, ok: false, error: err.message, profileId: profile.id });
+      } finally {
+        await closePageSafely(page);
       }
     }
   } finally {
