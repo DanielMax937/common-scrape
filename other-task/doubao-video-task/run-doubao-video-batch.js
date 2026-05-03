@@ -547,6 +547,11 @@ async function createWorker(profileDir, workerId, queue, config, results, profil
 
   fs.mkdirSync(profileDir, { recursive: true });
 
+  // Stagger browser launch to avoid simultaneous starts
+  const staggerDelayMs = (profileIndex + 1) * 10000;
+  console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s before launching browser`);
+  await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
+
   let context;
   try {
     if (proxy) {
@@ -560,11 +565,6 @@ async function createWorker(profileDir, workerId, queue, config, results, profil
     const page = context.pages()[0] || (await context.newPage());
     page.setDefaultTimeout(config.pageTimeoutMs);
     page.setDefaultNavigationTimeout(config.pageTimeoutMs);
-
-    // Stagger task submission to avoid overwhelming server
-    const staggerDelayMs = (profileIndex + 1) * 10000;
-    console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s`);
-    await page.waitForTimeout(staggerDelayMs);
 
     while (true) {
       const task = queue.next();

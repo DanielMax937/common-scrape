@@ -126,13 +126,6 @@ Profile storage: browser-profiles/browser-{id}/
   }
 
   try {
-    // Stagger launch to avoid simultaneous browser starts
-    const staggerDelayMs = profileId * 10000;
-    if (staggerDelayMs > 0) {
-      console.log(`⏳ Stagger delay: ${staggerDelayMs / 1000}s before launching...`);
-      await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
-    }
-
     const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
     
     // Grant clipboard permissions

@@ -859,6 +859,11 @@ async function createWorker(group, workerId, config, results, profileIndex) {
 
   const proxy = loadProxyConfig('alice', profileIndex);
 
+  // Stagger browser launch to avoid simultaneous starts
+  const staggerDelayMs = (profileIndex + 1) * 10000;
+  console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s before launching browser`);
+  await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
+
   let context;
   try {
     const launchOptions = {
@@ -875,11 +880,6 @@ async function createWorker(group, workerId, config, results, profileIndex) {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], {
       origin: new URL(config.targetUrl).origin,
     }).catch(() => {});
-
-    // Stagger task submission to avoid overwhelming Alice server
-    const staggerDelayMs = (profileIndex + 1) * 10000;
-    console.log(`${workerLabel} stagger delay: ${staggerDelayMs / 1000}s`);
-    await new Promise((resolve) => setTimeout(resolve, staggerDelayMs));
 
     for (const task of tasks) {
       // Each task gets a fresh tab: close previous page, open a new one
