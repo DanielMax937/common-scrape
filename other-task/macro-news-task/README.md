@@ -42,16 +42,14 @@ npm install
 
 # 2. 配置 LLM API
 cp other-task/macro-news-task/.env.example other-task/macro-news-task/.env
-# 编辑 .env 填入 LLM API Key
+# 编辑 .env 填入 VOLCENGINE_API_KEY 和 VOLCENGINE_MODEL
 ```
 
-支持的 LLM 服务：
-- **VolcEngine (豆包)** — 默认，需要 `LLM_API_KEY`
-- **OpenAI** — 修改 `LLM_ENDPOINT` 和 `LLM_MODEL`
-- **DeepSeek** — 修改 `LLM_ENDPOINT` 和 `LLM_MODEL`
-- 任何 OpenAI 兼容接口
+必须配置的环境变量：
+- **`VOLCENGINE_API_KEY`** — 火山引擎 API Key
+- **`VOLCENGINE_MODEL`** — 火山引擎模型名称（如 `doubao-pro-32k`）
 
-> 如果已在 `src/.env` 中配置了 `VOLCENGINE_API_KEY`，将自动复用，无需重复配置。
+> 如果已在 `src/.env` 中配置了 `VOLCENGINE_API_KEY` 和 `VOLCENGINE_MODEL`，将自动复用，无需重复配置。
 
 ## 使用方法
 

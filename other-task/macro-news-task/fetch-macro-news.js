@@ -22,7 +22,7 @@
  */
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
-// Also load the main project .env as fallback for VOLCENGINE_API_KEY etc.
+// Also load the main project .env as fallback for VOLCENGINE_API_KEY/VOLCENGINE_MODEL.
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../src/.env') });
 
 const fs = require('fs');

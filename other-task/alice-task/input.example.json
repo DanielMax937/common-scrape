@@ -3,7 +3,7 @@
   "assignment": {
     "profileSource": "env",
     "strategy": "perBrowserSequential",
-    "tasksPerBrowser": 2
+    "tasksPerBrowser": 1
   },
   "variables": {
     "aShareStockName": {

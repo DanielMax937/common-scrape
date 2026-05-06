@@ -1,7 +1,7 @@
 /**
- * LLM Client - OpenAI-compatible API wrapper
+ * LLM Client - VolcEngine (豆包) API wrapper
  *
- * Supports: VolcEngine (豆包), OpenAI, DeepSeek, or any OpenAI-compatible endpoint.
+ * Requires: VOLCENGINE_API_KEY and VOLCENGINE_MODEL environment variables.
  * Configuration via environment variables or constructor options.
  */
 
@@ -11,7 +11,7 @@ const http = require('http');
 const DEFAULT_CONFIG = {
   endpoint: 'https://ark.cn-beijing.volces.com/api/v3',
   apiKey: '',
-  model: 'doubao-pro-32k',
+  model: '',
   maxTokens: 4096,
   temperature: 0.3,
 };
@@ -99,14 +99,18 @@ async function chatCompletion({
 function createLLMClient() {
   const config = {
     endpoint: process.env.LLM_ENDPOINT || DEFAULT_CONFIG.endpoint,
-    apiKey: process.env.LLM_API_KEY || process.env.VOLCENGINE_API_KEY || '',
-    model: process.env.LLM_MODEL || process.env.VOLCENGINE_MODEL || DEFAULT_CONFIG.model,
+    apiKey: process.env.VOLCENGINE_API_KEY || '',
+    model: process.env.VOLCENGINE_MODEL || '',
     maxTokens: parseInt(process.env.LLM_MAX_TOKENS, 10) || DEFAULT_CONFIG.maxTokens,
     temperature: parseFloat(process.env.LLM_TEMPERATURE) || DEFAULT_CONFIG.temperature,
   };
 
   if (!config.apiKey) {
-    console.warn('⚠️  未配置 LLM_API_KEY 或 VOLCENGINE_API_KEY，LLM 解读将跳过');
+    console.warn('⚠️  未配置 VOLCENGINE_API_KEY，LLM 解读将跳过');
+  }
+
+  if (!config.model) {
+    console.warn('⚠️  未配置 VOLCENGINE_MODEL，LLM 解读将跳过');
   }
 
   return {
@@ -120,7 +124,7 @@ function createLLMClient() {
      * @returns {Promise<string>}
      */
     async analyze(sourceName, pageContent, analysisPrompt) {
-      if (!config.apiKey) return '[未配置 LLM API Key，跳过解读]';
+      if (!config.apiKey || !config.model) return '[未配置 VOLCENGINE_API_KEY 或 VOLCENGINE_MODEL，跳过解读]';
 
       const system = `你是一位资深的宏观经济和行业分析师。请基于提供的数据，给出专业、客观、简洁的分析解读。
 要求：

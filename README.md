@@ -501,14 +501,14 @@ npm run fetch:macro-news -- --no-cache
 Create `other-task/macro-news-task/.env`:
 
 ```bash
-LLM_API_KEY=your-volcengine-api-key
+VOLCENGINE_API_KEY=your-volcengine-api-key
+VOLCENGINE_MODEL=doubao-pro-32k
 LLM_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3
-LLM_MODEL=your-model-id
 LLM_MAX_TOKENS=2000
 LLM_TEMPERATURE=0.7
 ```
 
-Or use `VOLCENGINE_API_KEY` and `VOLCENGINE_MODEL` (auto-mapped).
+Both `VOLCENGINE_API_KEY` and `VOLCENGINE_MODEL` are required.
 
 #### Cache Behavior
 
