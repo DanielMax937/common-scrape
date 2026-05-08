@@ -20,17 +20,17 @@
   "taskTemplates": [
     {
       "name": "stock-analysis",
-      "skillNumber": 2,
+      "skillNumber": 3,
       "prompt": "请分析A股股票：{{aShareStockName}}。"
     },
     {
       "name": "stock-review",
-      "skillNumber": 3,
+      "skillNumber": 1,
       "prompt": "执行今日复盘"
     },
     {
       "name": "futures-analysis",
-      "skillNumber": 4,
+      "skillNumber": 2,
       "prompt": "请分析期货品种：{{futuresProductName}}。"
     }
   ]
