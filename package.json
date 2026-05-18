@@ -12,6 +12,7 @@
     "scrape:twitter": "node other-task/twitter-task/scrape-twitter-list.js",
     "scrape:twitter:today": "node other-task/twitter-task/scrape-twitter-list.js --since today",
     "scrape:twitter:fresh": "node other-task/twitter-task/scrape-twitter-list.js --no-cache",
+    "scrape:twitter:user": "node other-task/twitter-task/scrape-twitter-user.js",
     "scrape:weibo": "node other-task/weibo-task/scrape-weibo-list.js",
     "scrape:weibo:today": "node other-task/weibo-task/scrape-weibo-list.js --since today",
     "scrape:weibo:fresh": "node other-task/weibo-task/scrape-weibo-list.js --no-cache",

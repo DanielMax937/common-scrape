@@ -131,6 +131,30 @@ npm run scrape:twitter -- --no-headless
 npm run scrape:twitter -- --no-cache
 ```
 
+#### User Timeline Scraper
+
+For a single X profile, use:
+
+```bash
+# Default: https://x.com/aimikoda, down to 2026-02-07 inclusive
+npm run scrape:twitter:user
+
+# Resume is enabled by default through crawl-state.json
+npm run scrape:twitter:user -- --profile 2
+
+# Start over
+npm run scrape:twitter:user -- --fresh
+
+# Custom profile / cutoff
+npm run scrape:twitter:user -- --url https://x.com/aimikoda --handle aimikoda --until 2026-02-07
+
+# Optional: also download images
+npm run scrape:twitter:user -- --download-images
+```
+
+Output defaults to `other-task/twitter-task/twitter-user-aimikoda-2026-02-07/`.
+Each post is saved as `blog-0001-<tweet-id>/content.md`; progress is recorded in `crawl-state.json` so interrupted runs skip previously saved post URLs.
+
 #### Output Structure
 
 ```
