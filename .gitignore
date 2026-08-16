@@ -78,6 +78,7 @@ pids/
 .claude/
 
 # Scraper output data
+/other-task/twitter-task/debug-screenshot.png
 /other-task/twitter-task/twitter-*/
 /other-task/weibo-task/weibo-*/
 /other-task/weibo-task/weibo-user-*/
