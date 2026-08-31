@@ -14,6 +14,8 @@
  *   - config:   全局配置
  */
 
+const { validatePageResult } = require('../page-validation');
+
 // ============================================================
 // fetch-page: 使用 Playwright 访问 URL，获取原始 HTML
 // ============================================================
@@ -33,7 +35,7 @@ async function fetchPage(input, context) {
   const page = await browserContext.newPage();
 
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
     await page.waitForTimeout(3000); // JS 渲染缓冲
 
     const title = await page.title();
@@ -42,7 +44,11 @@ async function fetchPage(input, context) {
     // 同时在 page context 里提取纯文本快照 (给 extract 步骤备用)
     const textSnapshot = await page.evaluate(() => document.body.innerText.slice(0, 20000));
 
-    return { url, title, html, textSnapshot };
+    const status = response ? response.status() : null;
+    const finalUrl = page.url();
+    validatePageResult({ status, title, text: textSnapshot, url, finalUrl });
+
+    return { url, finalUrl, status, title, html, textSnapshot };
   } finally {
     await browserContext.close();
   }

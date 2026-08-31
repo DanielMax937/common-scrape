@@ -7,6 +7,10 @@
 
 const https = require('https');
 const http = require('http');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const dotenv = require('dotenv');
 
 const DEFAULT_CONFIG = {
   endpoint: 'https://ark.cn-beijing.volces.com/api/v3',
@@ -37,7 +41,7 @@ async function chatCompletion({
   maxTokens = DEFAULT_CONFIG.maxTokens,
   temperature = DEFAULT_CONFIG.temperature,
 }) {
-  const url = new URL(endpoint + '/chat/completions');
+  const url = new URL(endpoint.replace(/\/+$/, '') + '/chat/completions');
   const isHttps = url.protocol === 'https:';
   const transport = isHttps ? https : http;
 
@@ -69,16 +73,28 @@ async function chatCompletion({
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          if ((res.statusCode || 0) >= 400) {
+            const error = new Error(`LLM API returned HTTP ${res.statusCode}`);
+            error.statusCode = res.statusCode;
+            reject(error);
+            return;
+          }
           try {
             const json = JSON.parse(data);
             if (json.error) {
-              reject(new Error(`LLM API error: ${json.error.message || JSON.stringify(json.error)}`));
+              const error = new Error('LLM API returned an error response');
+              error.statusCode = res.statusCode;
+              reject(error);
               return;
             }
             const content = json.choices?.[0]?.message?.content || '';
+            if (!content.trim()) {
+              reject(new Error('LLM API returned an empty response'));
+              return;
+            }
             resolve(content.trim());
           } catch (e) {
-            reject(new Error(`LLM response parse error: ${e.message}\nRaw: ${data.slice(0, 500)}`));
+            reject(new Error(`LLM response parse error: ${e.message}`));
           }
         });
       },
@@ -93,6 +109,52 @@ async function chatCompletion({
   });
 }
 
+function normalizeEndpoint(raw) {
+  const endpoint = String(raw || '').trim().replace(/\/+$/, '');
+  if (!endpoint) return '';
+  return endpoint.endsWith('/v1') || endpoint.includes('/api/v3') ? endpoint : `${endpoint}/v1`;
+}
+
+function safeError(error) {
+  const status = error && error.statusCode ? ` status=${error.statusCode}` : '';
+  return `${error?.name || 'Error'}${status}`;
+}
+
+function readEnvFile(filePath) {
+  try {
+    return dotenv.parse(fs.readFileSync(filePath));
+  } catch (_) {
+    return {};
+  }
+}
+
+function buildAttempts(primary) {
+  const attempts = [];
+  const seen = new Set();
+  const add = (label, endpoint, apiKey, model, maxTokens, temperature) => {
+    const normalized = normalizeEndpoint(endpoint);
+    const identity = `${normalized}|${model}`;
+    if (!normalized || !apiKey || !model || seen.has(identity)) return;
+    seen.add(identity);
+    attempts.push({ label, endpoint: normalized, apiKey, model, maxTokens, temperature });
+  };
+
+  add('migrated:volcengine', primary.endpoint, primary.apiKey, primary.model, primary.maxTokens, primary.temperature);
+
+  const migrationRoot = path.resolve(__dirname, '../../../../..');
+  const configs = [
+    ['migrated:blog2media', path.join(migrationRoot, 'config', 'blog2media.env')],
+    ['m4:blog2media', path.join(os.homedir(), 'Desktop', 'git', 'blog2media', '.env')],
+  ];
+  for (const [label, filePath] of configs) {
+    const values = readEnvFile(filePath);
+    const defaultModel = values.FALLBACK_OPENAI_MODEL || 'codex-login/gpt-5.5';
+    add(`${label}:primary`, values.OPENAI_BASE_URL, values.OPENAI_API_KEY, values.OPENAI_MODEL || defaultModel, primary.maxTokens, primary.temperature);
+    add(`${label}:fallback`, values.FALLBACK_OPENAI_BASE_URL, values.FALLBACK_OPENAI_API_KEY, values.FALLBACK_OPENAI_MODEL || defaultModel, primary.maxTokens, primary.temperature);
+  }
+  return attempts;
+}
+
 /**
  * Create a configured LLM client from environment variables
  */
@@ -104,13 +166,10 @@ function createLLMClient() {
     maxTokens: parseInt(process.env.LLM_MAX_TOKENS, 10) || DEFAULT_CONFIG.maxTokens,
     temperature: parseFloat(process.env.LLM_TEMPERATURE) || DEFAULT_CONFIG.temperature,
   };
+  const attempts = buildAttempts(config);
 
-  if (!config.apiKey) {
-    console.warn('⚠️  未配置 VOLCENGINE_API_KEY，LLM 解读将跳过');
-  }
-
-  if (!config.model) {
-    console.warn('⚠️  未配置 VOLCENGINE_MODEL，LLM 解读将跳过');
+  if (attempts.length === 0) {
+    console.warn('⚠️  没有可用的迁移 LLM 或 blog2media 降级配置，LLM 解读将跳过');
   }
 
   return {
@@ -124,7 +183,7 @@ function createLLMClient() {
      * @returns {Promise<string>}
      */
     async analyze(sourceName, pageContent, analysisPrompt) {
-      if (!config.apiKey || !config.model) return '[未配置 VOLCENGINE_API_KEY 或 VOLCENGINE_MODEL，跳过解读]';
+      if (attempts.length === 0) return '[未配置可用 LLM，跳过解读]';
 
       const system = `你是一位资深的宏观经济和行业分析师。请基于提供的数据，给出专业、客观、简洁的分析解读。
 要求：
@@ -142,11 +201,18 @@ ${pageContent.slice(0, 8000)}
 ## 分析要求：
 ${analysisPrompt}`;
 
-      return chatCompletion({
-        ...config,
-        system,
-        user,
-      });
+      const failures = [];
+      for (const attempt of attempts) {
+        try {
+          const answer = await chatCompletion({ ...attempt, system, user });
+          console.log(`    ✓ LLM provider: ${attempt.label} model=${attempt.model}`);
+          return answer;
+        } catch (error) {
+          failures.push(`${attempt.label}:${safeError(error)}`);
+          console.warn(`    ⚠ LLM provider failed: ${attempt.label} (${safeError(error)})`);
+        }
+      }
+      throw new Error(`All configured LLM providers failed: ${failures.join(', ')}`);
     },
   };
 }

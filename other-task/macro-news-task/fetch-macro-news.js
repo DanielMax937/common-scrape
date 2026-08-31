@@ -30,6 +30,7 @@ const path = require('path');
 const { chromium } = require('patchright');
 const { ALL_SOURCES, MACRO_SOURCES, INDUSTRY_SOURCES } = require('./data-sources');
 const { createLLMClient } = require('./llm-client');
+const { validatePageResult } = require('./page-validation');
 
 // ============================================================
 // CLI
@@ -201,13 +202,16 @@ async function extractPageContent(page) {
 async function fetchUrl(page, url, timeout) {
   console.log(`    正在访问: ${url}`);
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
     // Wait a bit for dynamic content to render
     await page.waitForTimeout(3000);
     const title = await page.title();
     const content = await extractPageContent(page);
+    const status = response ? response.status() : null;
+    const finalUrl = page.url();
+    validatePageResult({ status, title, text: content, url, finalUrl });
     console.log(`    ✓ 成功 (标题: ${title})`);
-    return { url, title, content, error: null };
+    return { url, finalUrl, status, title, content, error: null };
   } catch (err) {
     console.error(`    ✗ 失败: ${err.message}`);
     return { url, title: '', content: '', error: err.message };

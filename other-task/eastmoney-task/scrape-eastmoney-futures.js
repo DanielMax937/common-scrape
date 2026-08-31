@@ -145,10 +145,17 @@ async function extractArticleContent(page, url) {
     await page.waitForTimeout(1500);
 
     return await page.evaluate(() => {
-      const titleEl = document.querySelector('h1, .newsTitle, .b-review-title, .title');
-      const title = titleEl ? titleEl.textContent.trim() : '';
+      // `.title` on EastMoney article pages is the global navigation label
+      // "行情中心", not the article headline. Prefer article-specific nodes,
+      // then fall back to document.title ("<headline> _ 东方财富网").
+      const titleEl = document.querySelector('h1, .newsTitle, .b-review-title');
+      const documentTitle = document.title
+        .replace(/\s+_\s+东方财富网.*$/, '')
+        .trim();
+      const title = titleEl ? titleEl.textContent.trim() : documentTitle;
 
-      const infoEl = document.querySelector('.Info, .time, .author, .info, .source');
+      // Current article pages expose publication time/source in `.infos`.
+      const infoEl = document.querySelector('.infos, .Info, .time, .author, .info, .source');
       const info = infoEl ? infoEl.textContent.trim() : '';
 
       const bodyEl = document.querySelector('#ContentBody');
@@ -366,7 +373,7 @@ async function processSymbol(page, symbol, outputDir) {
     console.log(`      [${i + 1}/${newsLinks.length}] ${link.title.substring(0, 50)}...`);
     const article = await extractArticleContent(page, link.href);
     article.href = link.href;
-    if (!article.title) article.title = link.title;
+    if (!article.title || article.title === '行情中心') article.title = link.title;
     saveNewsArticle(article, i + 1, newsDir);
   }
   console.log(`      ✅ Saved ${newsLinks.length} articles to news/`);

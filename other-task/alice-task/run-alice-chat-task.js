@@ -120,7 +120,22 @@ function getProfileConfigs() {
 }
 
 function getEnvConfig() {
-  const profiles = getProfileConfigs();
+  const requestedProfiles = getProfileConfigs();
+  const profiles = requestedProfiles.filter((profile) => {
+    try {
+      return fs.statSync(profile.dir).isDirectory();
+    } catch (_) {
+      return false;
+    }
+  });
+  const skippedProfiles = requestedProfiles.filter(
+    (requested) => !profiles.some((profile) => profile.dir === requested.dir)
+  );
+  if (profiles.length === 0) {
+    throw new Error(
+      `No usable Alice browser profiles. Requested: ${requestedProfiles.map((profile) => profile.dir).join(', ')}`
+    );
+  }
   const baseOutputDir = path.resolve(PROJECT_ROOT, process.env.ALICE_OUTPUT_DIR || path.join('output', 'alice'));
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const outputDir = path.join(baseOutputDir, timestamp);
@@ -131,6 +146,7 @@ function getEnvConfig() {
       process.env.ALICE_INPUT_JSON || './other-task/alice-task/input.json'
     ),
     profiles,
+    skippedProfiles,
     outputDir,
     resultsPath: path.join(outputDir, 'results.jsonl'),
     targetUrl: process.env.ALICE_TARGET_URL || DEFAULT_TARGET_URL,
@@ -840,6 +856,9 @@ function printConfig(config, taskCount) {
   console.log(`Tasks:           ${taskCount}`);
   console.log(`Profiles:        ${config.profiles.length}`);
   console.log(`Profile dirs:    ${config.profiles.map((profile) => profile.dir).join(', ')}`);
+  if (config.skippedProfiles.length > 0) {
+    console.log(`Skipped missing: ${config.skippedProfiles.map((profile) => profile.id).join(', ')}`);
+  }
   console.log(`Target URL:      ${config.targetUrl}`);
   console.log(`Output dir:      ${config.outputDir}`);
   console.log(`Results log:     ${config.resultsPath}`);
@@ -855,7 +874,9 @@ async function createWorker(group, workerId, config, results, profileIndex) {
   const { profile, tasks } = group;
   const workerLabel = `[alice-worker-${workerId}]`;
   const profileDir = profile.dir;
-  fs.mkdirSync(profileDir, { recursive: true });
+  if (!fs.existsSync(profileDir) || !fs.statSync(profileDir).isDirectory()) {
+    throw new Error(`Alice profile directory disappeared before launch: ${profileDir}`);
+  }
 
   const proxy = loadProxyConfig('alice', profileIndex);
 
